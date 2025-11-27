@@ -70,9 +70,9 @@ public class SpringSecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/{id}").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/users/{id}").permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/api/v1/users").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/users/{id}").hasRole("ADMIN")
 
                         .requestMatchers("/api/v1/products/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/orders/**").hasRole("ADMIN")
