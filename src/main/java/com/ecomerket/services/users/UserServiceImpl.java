@@ -7,10 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+
+import java.util.*;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -47,10 +45,18 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    import java.util.ArrayList; // Asegúrate de tener esta importación
+import java.util.List;
+import java.util.Set;
+// ... (otras importaciones)
+
+// ...
+
+    @Override
+    @Transactional
     public User registerUser(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        // Uso de Set para roles (evita duplicados)
         Set<Role> roles = new HashSet<>();
 
         Optional<Role> roleUserOptional = roleRepository.findByName("ROLE_USER");
@@ -61,7 +67,8 @@ public class UserServiceImpl implements UserService {
             roleAdminOptional.ifPresent(roles::add);
         }
 
-        user.setRoles(roles);
+        List<Role> userRolesList = new ArrayList<>(roles);
+        user.setRoles(userRolesList);
 
         return userRepository.save(user);
     }
