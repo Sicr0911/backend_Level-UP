@@ -1,6 +1,5 @@
 package com.ecomerket.models.users;
 import com.ecomerket.models.audit.Audit;
-import com.ecomerket.models.audit.audit;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -22,7 +21,7 @@ public class Role {
     private String name;
 
     @Embedded
-    private Audit audit = new audit();
+    private Audit audit = new Audit();
 
     @JsonIgnoreProperties({"roles"})
     @ManyToMany(mappedBy = "roles")

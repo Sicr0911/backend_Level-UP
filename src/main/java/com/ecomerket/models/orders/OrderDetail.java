@@ -1,14 +1,17 @@
 package com.ecomerket.models.orders;
+
 import com.ecomerket.models.products.Product;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "detalle_boletas")
+@Table (name = "detalle_boletas")
 @Getter
 @Setter
+@NoArgsConstructor
 public class OrderDetail {
 
     @Id

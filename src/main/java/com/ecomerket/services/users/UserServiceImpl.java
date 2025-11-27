@@ -50,6 +50,7 @@ public class UserServiceImpl implements UserService {
     public User registerUser(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
+        // Uso de Set para roles (evita duplicados)
         Set<Role> roles = new HashSet<>();
 
         Optional<Role> roleUserOptional = roleRepository.findByName("ROLE_USER");
@@ -59,7 +60,6 @@ public class UserServiceImpl implements UserService {
             Optional<Role> roleAdminOptional = roleRepository.findByName("ROLE_ADMIN");
             roleAdminOptional.ifPresent(roles::add);
         }
-
 
         user.setRoles(roles);
 
