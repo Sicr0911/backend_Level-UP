@@ -10,7 +10,6 @@ import com.ecomerket.services.Products.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,7 +61,9 @@ public class OrderServiceImpl implements OrderService {
 
         for (OrderRequestDTO.ItemDTO itemDto : orderDto.getItems()) {
 
-            Product product = productService.getProductById(itemDto.getProductId());
+            Product product = productService.findById(itemDto.getProductId()).orElseThrow(
+                    () -> new RuntimeException("Producto con ID " + itemDto.getProductId() + " no encontrado.")
+            );
 
             double unitPrice = product.getPrecio().doubleValue();
 
@@ -90,15 +91,15 @@ public class OrderServiceImpl implements OrderService {
         newOrder.setTotal(total);
         newOrder.setItems(orderDetails);
 
-        return orderRepository.save(newOrder);
+        return OrderRepository.save(newOrder);
     }
 
     @Override
     @Transactional
     public void deleteOrder(Long id) {
-        if (!orderRepository.existsById(id)) {
+        if (!OrderRepository.existsById(id)) {
             throw new RuntimeException("Orden con ID " + id + " no encontrada para eliminar.");
         }
-        orderRepository.deleteById(id);
+        OrderRepository.deleteById(id);
     }
 }
