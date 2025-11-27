@@ -1,5 +1,4 @@
 package com.ecomerket.controllers.products;
-
 import com.ecomerket.models.products.Product;
 import com.ecomerket.services.Products.ProductService;
 import jakarta.validation.Valid;
@@ -23,7 +22,7 @@ public class ProductController {
 
     @GetMapping
     public ResponseEntity<List<Product>> list() {
-        return ResponseEntity.ok(productService.getAllProducts());
+        return ResponseEntity.ok(productService.findAll());
     }
 
     @GetMapping("/{id}")
@@ -40,7 +39,7 @@ public class ProductController {
         if (result.hasErrors()) {
             return validation(result);
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(productService.saveProduct(product));
+        return ResponseEntity.status(HttpStatus.CREATED).body(productService.save(product));
     }
 
     @PutMapping("/{id}")
@@ -59,7 +58,7 @@ public class ProductController {
             productDb.setImagen(product.getImagen());
             productDb.setStock(product.getStock());
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(productService.saveProduct(productDb));
+            return ResponseEntity.status(HttpStatus.CREATED).body(productService.save(productDb));
         }
         return ResponseEntity.notFound().build();
     }
@@ -68,13 +67,12 @@ public class ProductController {
     public ResponseEntity<?> delete(@PathVariable Long id) {
         Optional<Product> o = productService.findById(id);
         if (o.isPresent()) {
-            productService.deleteProduct(id);
+            productService.delete(id);
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.notFound().build();
     }
 
-    // Método auxiliar de validación
     private ResponseEntity<Map<String, String>> validation(BindingResult result) {
         Map<String, String> errors = new HashMap<>();
         result.getFieldErrors().forEach(err -> {
