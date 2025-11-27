@@ -33,6 +33,12 @@ public class userController {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.registerUser(user));
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+        return ResponseEntity.ok("Usuario eliminado correctamente");
+    }
+
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody User user, BindingResult result) {
         if (result.hasErrors()) {
