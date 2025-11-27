@@ -7,9 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -38,7 +39,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User save(User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        if (user.getId() == null || !user.getPassword().startsWith("$2a$")) {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+        }
         return userRepository.save(user);
     }
 
@@ -47,17 +50,19 @@ public class UserServiceImpl implements UserService {
     public User registerUser(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        Optional<Role> roleUser = roleRepository.findByName("ROLE_USER");
-        List<Role> roles = new ArrayList<>();
+        Set<Role> roles = new HashSet<>();
 
-        roleUser.ifPresent(roles::add);
+        Optional<Role> roleUserOptional = roleRepository.findByName("ROLE_USER");
+        roleUserOptional.ifPresent(roles::add);
 
         if (user.isAdmin()) {
-            Optional<Role> roleAdmin = roleRepository.findByName("ROLE_ADMIN");
-            roleAdmin.ifPresent(roles::add);
+            Optional<Role> roleAdminOptional = roleRepository.findByName("ROLE_ADMIN");
+            roleAdminOptional.ifPresent(roles::add);
         }
 
+
         user.setRoles(roles);
+
         return userRepository.save(user);
     }
 }

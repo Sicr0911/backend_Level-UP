@@ -26,6 +26,14 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Product getProductById(Long id) {
+        return productRepository.findById(id).orElseThrow(
+                () -> new RuntimeException("Producto con ID " + id + " no encontrado.")
+        );
+    }
+
+    @Override
     @Transactional
     public Product save(Product product) {
         return productRepository.save(product);

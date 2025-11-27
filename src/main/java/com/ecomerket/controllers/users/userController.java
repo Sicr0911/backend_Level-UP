@@ -39,7 +39,7 @@ public class UserController {
             return validation(result);
         }
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(userService.registerUser(user));
+        return ResponseEntity.status(HttpStatus.CREATED).body(userService.save(user));
     }
 
     private ResponseEntity<Map<String, String>> validation(BindingResult result) {

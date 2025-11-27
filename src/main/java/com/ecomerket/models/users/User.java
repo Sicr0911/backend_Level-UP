@@ -1,4 +1,5 @@
 package com.ecomerket.models.users;
+import com.ecomerket.models.audit.Audit;
 import com.ecomerket.models.audit.audit;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -39,7 +40,7 @@ public class User {
     private boolean admin;
 
     @Embedded
-    private audit audit = new audit();
+    private Audit audit = new audit();
 
     @JsonIgnoreProperties({"users"})
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
