@@ -42,13 +42,9 @@ public class SpringSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-
         config.setAllowedOriginPatterns(List.of("*"));
-
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-
         config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
-
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -66,14 +62,16 @@ public class SpringSecurityConfig {
                 .addFilter(new JwtValidationFilter(authManager))
 
                 .csrf(AbstractHttpConfigurer::disable)
-
                 .cors(config -> config.configurationSource(corsConfigurationSource()))
 
                 .authorizeHttpRequests(authRules -> authRules
+                        // Endpoints Públicos
                         .requestMatchers(HttpMethod.POST, "/api/v1/users/register").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/{id}").permitAll()
+
+                        .requestMatchers(HttpMethod.GET, "/api/v1/users").hasRole("ADMIN")
 
                         .requestMatchers("/api/v1/products/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/orders/**").hasRole("ADMIN")
