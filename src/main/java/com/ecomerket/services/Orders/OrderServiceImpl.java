@@ -1,5 +1,6 @@
 package com.ecomerket.services.Orders;
 import com.ecomerket.models.dtos.OrderRequestDTO;
+import com.ecomerket.models.dtos.ItemDTO;
 import com.ecomerket.models.orders.Order;
 import com.ecomerket.models.orders.OrderDetail;
 import com.ecomerket.models.products.Product;
@@ -59,8 +60,9 @@ public class OrderServiceImpl implements OrderService {
         List<OrderDetail> orderDetails = new ArrayList<>();
         double total = 0.0;
 
-        for (OrderRequestDTO.ItemDTO itemDto : orderDto.getItems()) {
+        for (ItemDTO itemDto : orderDto.getItems()) {
 
+            // Se busca el producto, si no existe lanza RuntimeException
             Product product = productService.findById(itemDto.getProductId()).orElseThrow(
                     () -> new RuntimeException("Producto con ID " + itemDto.getProductId() + " no encontrado.")
             );
@@ -91,15 +93,15 @@ public class OrderServiceImpl implements OrderService {
         newOrder.setTotal(total);
         newOrder.setItems(orderDetails);
 
-        return OrderRepository.save(newOrder);
+        return orderRepository.save(newOrder);
     }
 
     @Override
     @Transactional
     public void deleteOrder(Long id) {
-        if (!OrderRepository.existsById(id)) {
+        if (!orderRepository.existsById(id)) {
             throw new RuntimeException("Orden con ID " + id + " no encontrada para eliminar.");
         }
-        OrderRepository.deleteById(id);
+        orderRepository.deleteById(id);
     }
 }
