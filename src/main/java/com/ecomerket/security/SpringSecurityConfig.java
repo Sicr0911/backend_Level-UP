@@ -57,24 +57,26 @@ public class SpringSecurityConfig {
 
         AuthenticationManager authManager = authenticationManager();
 
+        JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(authManager);
+        jwtAuthenticationFilter.setFilterProcessesUrl("/api/v1/login"); // <--- ESTA LÍNEA ES CLAVE
+
         return http
-                .addFilter(new JwtAuthenticationFilter(authManager))
+                .addFilter(jwtAuthenticationFilter)
                 .addFilter(new JwtValidationFilter(authManager))
 
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(config -> config.configurationSource(corsConfigurationSource()))
 
                 .authorizeHttpRequests(authRules -> authRules
-                        // Endpoints Públicos
                         .requestMatchers(HttpMethod.POST, "/api/v1/users/register").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/{id}").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/users/{id}").permitAll()
+
                         .requestMatchers("/api/v1/login").permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/api/v1/users").hasRole("ADMIN")
-
                         .requestMatchers("/api/v1/products/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/orders/**").hasRole("ADMIN")
 
