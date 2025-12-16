@@ -1,4 +1,5 @@
 package com.ecomerket.controllers.users;
+
 import com.ecomerket.models.users.User;
 import com.ecomerket.services.users.UserService;
 import jakarta.validation.Valid;
@@ -11,13 +12,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@CrossOrigin(originPatterns = "*", origins = "http://localhost:5300")
 @RestController
 @RequestMapping("/api/v1/users")
-public class userController {
+public class UserController {
 
     @Autowired
-    private UserService UserService;
+    private UserService userService;
 
     @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {
@@ -29,7 +29,6 @@ public class userController {
         if (result.hasErrors()) {
             return validation(result);
         }
-
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.registerUser(user));
     }
 
@@ -44,7 +43,6 @@ public class userController {
         if (result.hasErrors()) {
             return validation(result);
         }
-
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.save(user));
     }
 

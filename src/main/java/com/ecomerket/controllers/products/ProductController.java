@@ -1,4 +1,5 @@
 package com.ecomerket.controllers.products;
+
 import com.ecomerket.models.products.Product;
 import com.ecomerket.services.Products.ProductService;
 import jakarta.validation.Valid;
@@ -12,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@CrossOrigin(originPatterns = "*", origins = "http://localhost:5300")
 @RestController
 @RequestMapping("/api/v1/products")
 public class ProductController {
@@ -81,4 +81,3 @@ public class ProductController {
         return ResponseEntity.badRequest().body(errors);
     }
 }
-

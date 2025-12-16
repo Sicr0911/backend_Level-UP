@@ -65,25 +65,27 @@ public class SpringSecurityConfig {
                 .addFilter(new JwtValidationFilter(authManager))
 
                 .csrf(AbstractHttpConfigurer::disable)
+
+                .headers(headers -> headers.frameOptions(frame -> frame.disable()))
+
                 .cors(config -> config.configurationSource(corsConfigurationSource()))
 
                 .authorizeHttpRequests(authRules -> authRules
+
+                        .requestMatchers("/h2-console/**").permitAll()
 
                         .requestMatchers(HttpMethod.POST, "/api/v1/users/register").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/{id}").permitAll()
                         .requestMatchers("/api/v1/login").permitAll()
 
-
                         .requestMatchers(HttpMethod.POST, "/api/v1/orders").authenticated()
-
 
                         .requestMatchers(HttpMethod.GET, "/api/v1/users").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/users/{id}").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/users").hasRole("ADMIN")
 
                         .requestMatchers("/api/v1/products/**").hasRole("ADMIN")
-
                         .requestMatchers("/api/v1/orders/**").hasRole("ADMIN")
 
                         .anyRequest().authenticated()
