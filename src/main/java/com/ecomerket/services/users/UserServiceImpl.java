@@ -1,4 +1,5 @@
 package com.ecomerket.services.users;
+
 import com.ecomerket.models.users.Role;
 import com.ecomerket.models.users.User;
 import com.ecomerket.repositories.users.RoleRepository;
@@ -43,29 +44,27 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User save(User user) {
-        if (user.getId() == null || !user.getPassword().startsWith("$2a$")) {
+
+        if (user.getId() == null || (user.getPassword() != null && !user.getPassword().startsWith("$2a$"))) {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
         }
+
         return userRepository.save(user);
     }
 
     @Override
     @Transactional
     public User registerUser(User user) {
+
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+        user.setAdmin(false);
 
         Set<Role> roles = new HashSet<>();
 
-        Optional<Role> roleUserOptional = roleRepository.findByName("ROLE_USER");
-        roleUserOptional.ifPresent(roles::add);
+        roleRepository.findByName("ROLE_USER").ifPresent(roles::add);
 
-        if (user.isAdmin()) {
-            Optional<Role> roleAdminOptional = roleRepository.findByName("ROLE_ADMIN");
-            roleAdminOptional.ifPresent(roles::add);
-        }
-
-        List<Role> userRolesList = new ArrayList<>(roles);
-        user.setRoles(userRolesList);
+        user.setRoles(new ArrayList<>(roles));
 
         return userRepository.save(user);
     }

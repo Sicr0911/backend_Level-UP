@@ -1,10 +1,10 @@
 package com.ecomerket.security;
 
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import javax.crypto.SecretKey;
 
 public class TokenJwtConfig {
-    public static final SecretKey SECRET_KEY = Jwts.SIG.HS256.key().build();
+    public static final SecretKey SECRET_KEY = Keys.hmacShaKeyFor("EstaEsUnaClaveSecretaMuySegura123456!".getBytes());
 
     public static final String HEADER_AUTHORIZATION = "Authorization";
 
