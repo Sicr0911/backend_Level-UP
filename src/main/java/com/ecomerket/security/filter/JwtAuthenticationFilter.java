@@ -1,6 +1,6 @@
 package com.ecomerket.security.filter;
-
 import com.ecomerket.models.users.User;
+import com.ecomerket.repositories.users.UserRepository;
 import com.ecomerket.security.TokenJwtConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
@@ -15,19 +15,21 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
     private final AuthenticationManager authenticationManager;
+    private final UserRepository userRepository;
 
-    public JwtAuthenticationFilter(AuthenticationManager authenticationManager) {
+    public JwtAuthenticationFilter(AuthenticationManager authenticationManager, UserRepository userRepository) {
         this.authenticationManager = authenticationManager;
+        this.userRepository = userRepository;
         this.setFilterProcessesUrl("/api/v1/login");
     }
 
@@ -44,7 +46,8 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             username = user.getUsername();
             password = user.getPassword();
 
-        } catch (IOException ignored) {
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         UsernamePasswordAuthenticationToken authToken =
@@ -58,11 +61,13 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                                             FilterChain chain, Authentication authResult)
             throws IOException, ServletException {
 
-        org.springframework.security.core.userdetails.User user =
+        org.springframework.security.core.userdetails.User springUser =
                 (org.springframework.security.core.userdetails.User) authResult.getPrincipal();
 
-        String username = user.getUsername();
+        String username = springUser.getUsername();
         Collection<? extends GrantedAuthority> roles = authResult.getAuthorities();
+
+        Optional<User> userOptional = userRepository.findByUsername(username);
 
         Claims claims = Jwts.claims()
                 .add(TokenJwtConfig.AUTHORITIES, new ObjectMapper().writeValueAsString(roles))
@@ -80,8 +85,12 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
         Map<String, Object> body = new HashMap<>();
         body.put("token", token);
-        body.put("username", username);
         body.put("message", String.format("Hola %s, has iniciado sesión con éxito!", username));
+        body.put("username", username);
+
+        if(userOptional.isPresent()) {
+            body.put("user", userOptional.get());
+        }
 
         response.getWriter().write(new ObjectMapper().writeValueAsString(body));
         response.setStatus(200);
@@ -94,7 +103,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             throws IOException, ServletException {
 
         Map<String, Object> body = new HashMap<>();
-        body.put("message", "Error en la autenticación: " + failed.getMessage());
+        body.put("message", "Error de autenticación: username o password incorrectos");
         body.put("error", failed.getMessage());
 
         response.getWriter().write(new ObjectMapper().writeValueAsString(body));

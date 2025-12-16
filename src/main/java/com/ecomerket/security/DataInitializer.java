@@ -49,7 +49,7 @@ public class DataInitializer implements CommandLineRunner {
             admin.setRoles(new ArrayList<>(roles));
 
             userRepository.save(admin);
-            System.out.println(">>> USUARIO ADMIN CREADO: Username: 'admin' / Password: 'admin123'");
+            System.out.println(">>> USUARIO ADMIN CREADO: Username: 'admintrador' / Password: 'admin123'");
         } else {
             System.out.println(">>> USUARIO ADMIN YA EXISTE.");
         }
