@@ -1,10 +1,7 @@
 package com.ecomerket.repositories.products;
-import com.ecomerket.models.products.Product;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-import java.util.Optional;
 
-@Repository
-public interface ProductRepository extends JpaRepository<Product, Long> {
-    Optional<Product> findByName(String name);
+import org.springframework.data.repository.CrudRepository;
+import com.ecomerket.models.products.Product;
+
+public interface ProductRepository extends CrudRepository<Product, Long> {
 }
