@@ -1,34 +1,33 @@
 package com.ecomerket.controllers.products;
-
-import com.ecomerket.models.products.Product;
-import com.ecomerket.services.Products.ProductService;
-import jakarta.validation.Valid;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import com.ecomerket.models.products.Product;
+import com.ecomerket.services.Products.ProductService;
+import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/v1/products")
+@RequestMapping("/api/products")
+@CrossOrigin(originPatterns = "*")
 public class ProductController {
 
     @Autowired
-    private ProductService productService;
+    private ProductService service;
 
     @GetMapping
-    public ResponseEntity<List<Product>> list() {
-        return ResponseEntity.ok(productService.findAll());
+    public List<Product> list() {
+        return service.findAll();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> view(@PathVariable Long id) {
-        Optional<Product> productOptional = productService.findById(id);
+        Optional<Product> productOptional = service.findById(id);
         if (productOptional.isPresent()) {
             return ResponseEntity.ok(productOptional.orElseThrow());
         }
@@ -37,44 +36,34 @@ public class ProductController {
 
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody Product product, BindingResult result) {
-        if (result.hasErrors()) {
+        if (result.hasFieldErrors()) {
             return validation(result);
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(productService.save(product));
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.save(product));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@Valid @RequestBody Product product, BindingResult result, @PathVariable Long id) {
-        if (result.hasErrors()) {
+        if (result.hasFieldErrors()) {
             return validation(result);
         }
-
-        Optional<Product> o = productService.findById(id);
-        if (o.isPresent()) {
-            Product productDb = o.get();
-            productDb.setName(product.getName());
-            productDb.setPrecio(product.getPrecio());
-            productDb.setDescripcion(product.getDescripcion());
-            productDb.setCategoria(product.getCategoria());
-            productDb.setImagen(product.getImagen());
-            productDb.setStock(product.getStock());
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(productService.save(productDb));
+        Optional<Product> productOptional = service.update(id, product);
+        if (productOptional.isPresent()) {
+            return ResponseEntity.status(HttpStatus.CREATED).body(productOptional.orElseThrow());
         }
         return ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
-        Optional<Product> o = productService.findById(id);
-        if (o.isPresent()) {
-            productService.delete(id);
-            return ResponseEntity.noContent().build();
+        Optional<Product> productOptional = service.delete(id);
+        if (productOptional.isPresent()) {
+            return ResponseEntity.ok(productOptional.orElseThrow());
         }
         return ResponseEntity.notFound().build();
     }
 
-    private ResponseEntity<Map<String, String>> validation(BindingResult result) {
+    private ResponseEntity<?> validation(BindingResult result) {
         Map<String, String> errors = new HashMap<>();
         result.getFieldErrors().forEach(err -> {
             errors.put(err.getField(), "El campo " + err.getField() + " " + err.getDefaultMessage());
