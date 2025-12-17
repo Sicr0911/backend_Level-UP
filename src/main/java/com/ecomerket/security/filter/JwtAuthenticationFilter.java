@@ -1,76 +1,66 @@
 package com.ecomerket.security.filter;
-import com.ecomerket.models.users.User;
-import com.ecomerket.repositories.users.UserRepository;
-import com.ecomerket.security.TokenJwtConfig;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ecomerket.models.users.User;
+import com.ecomerket.security.TokenJwtConfig;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
-    private final AuthenticationManager authenticationManager;
-    private final UserRepository userRepository;
+    private AuthenticationManager authenticationManager;
 
-    public JwtAuthenticationFilter(AuthenticationManager authenticationManager, UserRepository userRepository) {
+    public JwtAuthenticationFilter(AuthenticationManager authenticationManager) {
         this.authenticationManager = authenticationManager;
-        this.userRepository = userRepository;
-        this.setFilterProcessesUrl("/api/v1/login");
     }
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
             throws AuthenticationException {
 
+        User user = null;
         String username = null;
         String password = null;
-        User user = null;
 
         try {
             user = new ObjectMapper().readValue(request.getInputStream(), User.class);
             username = user.getUsername();
             password = user.getPassword();
-
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        UsernamePasswordAuthenticationToken authToken =
-                new UsernamePasswordAuthenticationToken(username, password);
-
-        return authenticationManager.authenticate(authToken);
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password);
+        return authenticationManager.authenticate(authenticationToken);
     }
 
     @Override
-    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response,
-                                            FilterChain chain, Authentication authResult)
-            throws IOException, ServletException {
+    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
+                                            Authentication authResult) throws IOException, ServletException {
 
-        org.springframework.security.core.userdetails.User springUser =
-                (org.springframework.security.core.userdetails.User) authResult.getPrincipal();
+        org.springframework.security.core.userdetails.User user = (org.springframework.security.core.userdetails.User) authResult.getPrincipal();
+        String username = user.getUsername();
 
-        String username = springUser.getUsername();
         Collection<? extends GrantedAuthority> roles = authResult.getAuthorities();
 
-        Optional<User> userOptional = userRepository.findByUsername(username);
-
         Claims claims = Jwts.claims()
-                .add(TokenJwtConfig.AUTHORITIES, new ObjectMapper().writeValueAsString(roles))
+                .add("authorities", new ObjectMapper().writeValueAsString(roles))
+                .add("username", username)
                 .build();
 
         String token = Jwts.builder()
@@ -88,26 +78,21 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         body.put("message", String.format("Hola %s, has iniciado sesión con éxito!", username));
         body.put("username", username);
 
-        if(userOptional.isPresent()) {
-            body.put("user", userOptional.get());
-        }
-
         response.getWriter().write(new ObjectMapper().writeValueAsString(body));
+        response.setContentType(TokenJwtConfig.CONTENT_TYPE);
         response.setStatus(200);
-        response.setContentType("application/json");
     }
 
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
-                                              AuthenticationException failed)
-            throws IOException, ServletException {
+                                              AuthenticationException failed) throws IOException, ServletException {
 
         Map<String, Object> body = new HashMap<>();
         body.put("message", "Error de autenticación: username o password incorrectos");
         body.put("error", failed.getMessage());
 
         response.getWriter().write(new ObjectMapper().writeValueAsString(body));
+        response.setContentType(TokenJwtConfig.CONTENT_TYPE);
         response.setStatus(401);
-        response.setContentType("application/json");
     }
 }

@@ -1,16 +1,15 @@
 package com.ecomerket.security;
-
-import com.ecomerket.security.filter.JwtAuthenticationFilter;
-import com.ecomerket.security.filter.JwtValidationFilter;
+import java.util.Arrays;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,9 +17,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.Arrays;
-import java.util.List;
+import org.springframework.web.filter.CorsFilter;
+import com.ecomerket.security.filter.JwtAuthenticationFilter;
+import com.ecomerket.security.filter.JwtValidationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -30,21 +29,45 @@ public class SpringSecurityConfig {
     private AuthenticationConfiguration authenticationConfiguration;
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager() throws Exception {
+    AuthenticationManager authenticationManager() throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        return http.authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.GET, "/api/products", "/api/products/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/users/register").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/login").permitAll()
+
+                        .requestMatchers(HttpMethod.POST, "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers("/api/users/**").hasRole("ADMIN")
+
+                        .requestMatchers("/api/orders/**").hasAnyRole("ADMIN", "VENDEDOR")
+
+                        .anyRequest().authenticated())
+
+                .addFilter(new JwtAuthenticationFilter(authenticationManager()))
+                .addFilter(new JwtValidationFilter(authenticationManager()))
+                .csrf(config -> config.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .build();
+    }
+
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("*"));
-        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
+        config.setAllowedOriginPatterns(Arrays.asList("*"));
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "DELETE", "PUT"));
+        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -53,47 +76,10 @@ public class SpringSecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
-        AuthenticationManager authManager = authenticationManager();
-
-        JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(authManager);
-        jwtAuthenticationFilter.setFilterProcessesUrl("/api/v1/login");
-
-        return http
-                .addFilter(jwtAuthenticationFilter)
-                .addFilter(new JwtValidationFilter(authManager))
-
-                .csrf(AbstractHttpConfigurer::disable)
-
-                .headers(headers -> headers.frameOptions(frame -> frame.disable()))
-
-                .cors(config -> config.configurationSource(corsConfigurationSource()))
-
-                .authorizeHttpRequests(authRules -> authRules
-
-                        .requestMatchers("/h2-console/**").permitAll()
-
-                        .requestMatchers(HttpMethod.POST, "/api/v1/users/register").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/products").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/products/{id}").permitAll()
-                        .requestMatchers("/api/v1/login").permitAll()
-
-                        .requestMatchers(HttpMethod.POST, "/api/v1/orders").authenticated()
-
-                        .requestMatchers(HttpMethod.GET, "/api/v1/users").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/users/{id}").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/v1/users").hasRole("ADMIN")
-
-                        .requestMatchers("/api/v1/products/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/orders/**").hasRole("ADMIN")
-
-                        .anyRequest().authenticated()
-                )
-
-                .sessionManagement(management -> management
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-                .build();
+    FilterRegistrationBean<CorsFilter> corsFilter() {
+        FilterRegistrationBean<CorsFilter> bean = new FilterRegistrationBean<>(
+                new CorsFilter(corsConfigurationSource()));
+        bean.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return bean;
     }
 }
