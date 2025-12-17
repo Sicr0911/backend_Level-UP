@@ -39,12 +39,12 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User save(User user) {
-        if (user.getPassword().length() < 4 || user.getPassword().length() > 10) {
+        if (user.getPassword() == null || user.getPassword().length() < 4 || user.getPassword().length() > 10) {
             throw new IllegalArgumentException("La contraseña debe tener entre 4 y 10 caracteres");
         }
 
         String emailPattern = "^[\\w-\\.]+@(duoc\\.cl|profesor\\.duoc\\.cl|gmail\\.com)$";
-        if (!Pattern.matches(emailPattern, user.getUsername())) {
+        if (user.getEmail() == null || !Pattern.matches(emailPattern, user.getEmail())) {
             throw new IllegalArgumentException("El correo debe ser @duoc.cl, @profesor.duoc.cl o @gmail.com");
         }
 
@@ -52,7 +52,7 @@ public class UserServiceImpl implements UserService {
 
         if (user.getRoles() == null || user.getRoles().isEmpty()) {
             List<Role> roles = new ArrayList<>();
-            roleRepository.findByName("ROLE_CLIENTE").ifPresent(roles::add);
+            roleRepository.findByName("ROLE_USER").ifPresent(roles::add);
             user.setRoles(roles);
         }
 
@@ -72,7 +72,13 @@ public class UserServiceImpl implements UserService {
         if (userDb.isPresent()) {
             User existingUser = userDb.get();
             existingUser.setUsername(user.getUsername());
+            existingUser.setEmail(user.getEmail());
             existingUser.setRut(user.getRut());
+
+            if (user.getPassword() != null && !user.getPassword().isBlank()) {
+                existingUser.setPassword(passwordEncoder.encode(user.getPassword()));
+            }
+
             return Optional.of(repository.save(existingUser));
         }
         return Optional.empty();

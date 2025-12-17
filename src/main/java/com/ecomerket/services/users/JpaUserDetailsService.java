@@ -1,4 +1,5 @@
 package com.ecomerket.services.users;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -10,7 +11,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.ecomerket.models.users.User;
 import com.ecomerket.repositories.users.UserRepository;
 
@@ -39,7 +39,7 @@ public class JpaUserDetailsService implements UserDetailsService {
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),
-                user.getEnabled(),
+                user.getEnabled() != null ? user.getEnabled() : true,
                 true,
                 true,
                 true,

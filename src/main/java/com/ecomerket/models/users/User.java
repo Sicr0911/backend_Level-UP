@@ -2,6 +2,7 @@ package com.ecomerket.models.users;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -22,17 +23,21 @@ public class User {
     private Long id;
 
     @Column(unique = true, nullable = false)
-    @NotBlank(message = "El correo es obligatorio")
-    @Email(message = "Debe ser un formato de correo válido")
+    @NotBlank(message = "El nombre de usuario es obligatorio")
     private String username;
+
+    @Column(unique = true, nullable = false)
+    @NotBlank(message = "El correo es obligatorio")
+    @Pattern(regexp = "^[A-Za-z0-9._%+-]+@(duoc\\.cl|profesor\\.duoc\\.cl|gmail\\.com)$",
+            message = "El correo debe ser @duoc.cl, @profesor.duoc.cl o @gmail.com")
+    private String email;
 
     @Column(nullable = false)
     @NotBlank(message = "La contraseña es obligatoria")
+    @Size(min = 4, max = 10, message = "La contraseña debe tener entre 4 y 10 caracteres")
     private String password;
 
-    @Column(unique = true, nullable = false)
-    @NotBlank(message = "El RUT es obligatorio")
-    @Size(min = 7, max = 9, message = "El RUT debe tener entre 7 y 9 caracteres")
+    @Column(unique = true)
     private String rut;
 
     private Boolean enabled;

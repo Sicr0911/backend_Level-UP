@@ -1,5 +1,4 @@
 package com.ecomerket.security.filter;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
@@ -27,22 +26,21 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     public JwtAuthenticationFilter(AuthenticationManager authenticationManager) {
         this.authenticationManager = authenticationManager;
+        setFilterProcessesUrl("/api/auth/login");
     }
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
             throws AuthenticationException {
 
-        User user = null;
         String username = null;
         String password = null;
 
         try {
-            user = new ObjectMapper().readValue(request.getInputStream(), User.class);
+            User user = new ObjectMapper().readValue(request.getInputStream(), User.class);
             username = user.getUsername();
             password = user.getPassword();
         } catch (IOException e) {
-            e.printStackTrace();
         }
 
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password);
@@ -75,8 +73,8 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
         Map<String, Object> body = new HashMap<>();
         body.put("token", token);
-        body.put("message", String.format("Hola %s, has iniciado sesión con éxito!", username));
         body.put("username", username);
+        body.put("message", String.format("Hola %s, has iniciado sesión con éxito!", username));
 
         response.getWriter().write(new ObjectMapper().writeValueAsString(body));
         response.setContentType(TokenJwtConfig.CONTENT_TYPE);

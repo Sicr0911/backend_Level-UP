@@ -1,5 +1,4 @@
-package com.ecomerket.config;
-
+package com.ecomerket.security;
 import com.ecomerket.models.users.Role;
 import com.ecomerket.models.users.User;
 import com.ecomerket.repositories.users.RoleRepository;
@@ -8,12 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.List;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -28,30 +23,32 @@ public class DataInitializer implements CommandLineRunner {
     private PasswordEncoder passwordEncoder;
 
     @Override
-    @Transactional
     public void run(String... args) throws Exception {
-        System.out.println(">>> INICIANDO CARGA DE DATOS AUTOMÁTICA...");
+        if (roleRepository.findByName("ROLE_ADMIN").isEmpty()) {
+            roleRepository.save(new Role(null, "ROLE_ADMIN"));
+        }
 
-        Role adminRole = roleRepository.findByName("ROLE_ADMIN").orElseGet(() -> roleRepository.save(new Role("ROLE_ADMIN")));
-        Role userRole = roleRepository.findByName("ROLE_USER").orElseGet(() -> roleRepository.save(new Role("ROLE_USER")));
+        if (roleRepository.findByName("ROLE_VENDEDOR").isEmpty()) {
+            roleRepository.save(new Role(null, "ROLE_VENDEDOR"));
+        }
 
-        if (userRepository.findByUsername("admin").isEmpty()) {
+        if (roleRepository.findByName("ROLE_USER").isEmpty()) {
+            roleRepository.save(new Role(null, "ROLE_USER"));
+        }
+
+        if (!userRepository.existsByUsername("admin")) {
             User admin = new User();
-            admin.setUsername("administrador");
-            admin.setPassword(passwordEncoder.encode("admin123"));
+            admin.setUsername("admin");
+            admin.setEmail("admin@duoc.cl");
+            admin.setPassword(passwordEncoder.encode("1234"));
+            admin.setRut("11111111-1");
             admin.setEnabled(true);
-            admin.setAdmin(true);
-            admin.setEmail("admin@ecomerket.com");
 
-            Set<Role> roles = new HashSet<>();
-            roles.add(adminRole);
-            roles.add(userRole);
-            admin.setRoles(new ArrayList<>(roles));
+            List<Role> roles = new ArrayList<>();
+            roleRepository.findByName("ROLE_ADMIN").ifPresent(roles::add);
+            admin.setRoles(roles);
 
             userRepository.save(admin);
-            System.out.println(">>> USUARIO ADMIN CREADO: Username: 'admintrador' / Password: 'admin123'");
-        } else {
-            System.out.println(">>> USUARIO ADMIN YA EXISTE.");
         }
     }
 }
