@@ -1,58 +1,44 @@
 package com.ecomerket.controllers.orders;
-
-import com.ecomerket.models.dtos.OrderRequestDTO;
-import com.ecomerket.models.orders.Order;
-import com.ecomerket.services.Orders.OrderService;
-import jakarta.validation.Valid;
+import java.util.List;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.ecomerket.models.dtos.OrderRequestDTO;
+import com.ecomerket.models.orders.Order;
+import com.ecomerket.services.Orders.OrderService;
 
 @RestController
-@RequestMapping("/api/v1/orders")
+@RequestMapping("/api/orders")
+@CrossOrigin(originPatterns = "*")
 public class OrderController {
 
     @Autowired
-    private OrderService orderService;
-
-    @GetMapping
-    public ResponseEntity<List<Order>> findAll() {
-        return ResponseEntity.ok(orderService.findAll());
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<?> findById(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(orderService.findById(id));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
-    }
+    private OrderService service;
 
     @PostMapping
-    public ResponseEntity<?> createOrder(@Valid @RequestBody OrderRequestDTO orderDTO, BindingResult result) {
-        if (result.hasErrors()) {
-            return validation(result);
-        }
+    public ResponseEntity<?> create(@RequestBody OrderRequestDTO orderRequest) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+
         try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(orderService.createOrder(orderDTO));
+            return ResponseEntity.status(HttpStatus.CREATED).body(service.save(orderRequest, username));
         } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(error);
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    private ResponseEntity<Map<String, String>> validation(BindingResult result) {
-        Map<String, String> errors = new HashMap<>();
-        result.getFieldErrors().forEach(err -> {
-            errors.put(err.getField(), "El campo " + err.getField() + " " + err.getDefaultMessage());
-        });
-        return ResponseEntity.badRequest().body(errors);
+    @GetMapping("/all")
+    public List<Order> listAll() {
+        return service.findAll();
+    }
+
+    @GetMapping("/my-orders")
+    public List<Order> listMine() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return service.findByUser(auth.getName());
     }
 }

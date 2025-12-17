@@ -1,46 +1,36 @@
 package com.ecomerket.models.orders;
-import com.ecomerket.models.users.User;
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
+import com.ecomerket.models.users.User;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
-@Table(name = "boletas")
-@Getter
-@Setter
+@Table(name="orders")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class Order {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private LocalDateTime fecha;
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    @JsonIgnoreProperties({"roles", "password", "enabled", "handler", "hibernateLazyInitializer"})
+    private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cliente_id", nullable = false)
-    private User client;
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date createdAt;
 
-    @Column(nullable = false)
     private Double total;
 
-    @Column(nullable = false)
-    private String estado;
-
-    @Column(columnDefinition = "TEXT")
-    private String direccionEnvio;
-
-    @Column(name = "aplica_descuento_duoc")
-    private Boolean aplicaDescuentoDuoc = false;
-
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderDetail> items;
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties("order")
+    private List<OrderDetail> details;
 
     @PrePersist
-    protected void onCreate() {
-        this.fecha = LocalDateTime.now();
+    public void prePersist() {
+        this.createdAt = new Date();
     }
 }

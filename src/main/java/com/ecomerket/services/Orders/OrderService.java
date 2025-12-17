@@ -1,16 +1,10 @@
 package com.ecomerket.services.Orders;
-
+import java.util.List;
 import com.ecomerket.models.dtos.OrderRequestDTO;
 import com.ecomerket.models.orders.Order;
 
-import java.util.List;
 public interface OrderService {
-
+    Order save(OrderRequestDTO orderRequest, String username);
     List<Order> findAll();
-
-    Order findById(Long id);
-
-    Order createOrder(OrderRequestDTO orderDto);
-
-    void deleteOrder(Long id);
+    List<Order> findByUser(String username);
 }

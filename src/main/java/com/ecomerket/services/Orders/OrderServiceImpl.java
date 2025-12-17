@@ -1,107 +1,75 @@
 package com.ecomerket.services.Orders;
-import com.ecomerket.models.dtos.OrderRequestDTO;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.ecomerket.models.dtos.ItemDTO;
+import com.ecomerket.models.dtos.OrderRequestDTO;
 import com.ecomerket.models.orders.Order;
 import com.ecomerket.models.orders.OrderDetail;
 import com.ecomerket.models.products.Product;
 import com.ecomerket.models.users.User;
 import com.ecomerket.repositories.orders.OrderRepository;
+import com.ecomerket.repositories.products.ProductRepository;
 import com.ecomerket.repositories.users.UserRepository;
-import com.ecomerket.services.Products.ProductService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 public class OrderServiceImpl implements OrderService {
 
-    @Autowired
-    private OrderRepository orderRepository;
+    @Autowired private OrderRepository orderRepository;
+    @Autowired private UserRepository userRepository;
+    @Autowired private ProductRepository productRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+    @Override
+    @Transactional
+    public Order save(OrderRequestDTO orderRequest, String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-    @Autowired
-    private ProductService productService;
+        Order order = new Order();
+        order.setUser(user);
 
-    private static final double DUOC_DISCOUNT_RATE = 0.20;
+        List<OrderDetail> details = new ArrayList<>();
+        Double totalOrder = 0.0;
+
+        for (ItemDTO item : orderRequest.getItems()) {
+            Product product = productRepository.findById(item.getProductId())
+                    .orElseThrow(() -> new RuntimeException("Producto no encontrado ID: " + item.getProductId()));
+
+            if (product.getStock() < item.getQuantity()) {
+                throw new RuntimeException("Stock insuficiente para: " + product.getName());
+            }
+
+            product.setStock(product.getStock() - item.getQuantity());
+            productRepository.save(product);
+
+            OrderDetail detail = new OrderDetail();
+            detail.setOrder(order);
+            detail.setProduct(product);
+            detail.setQuantity(item.getQuantity());
+            detail.setPrice(product.getPrecio());
+
+            details.add(detail);
+            totalOrder += (product.getPrecio() * item.getQuantity());
+        }
+
+        order.setDetails(details);
+        order.setTotal(totalOrder);
+
+        return orderRepository.save(order);
+    }
 
     @Override
     @Transactional(readOnly = true)
     public List<Order> findAll() {
-        return orderRepository.findAll();
+        return orderRepository.findAllByOrderByCreatedAtDesc();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Order findById(Long id) {
-        return orderRepository.findById(id).orElseThrow(
-                () -> new RuntimeException("Orden con ID " + id + " no encontrada.")
-        );
-    }
-
-    @Override
-    @Transactional
-    public Order createOrder(OrderRequestDTO orderDto) {
-
-        User client = userRepository.findById(orderDto.getClientId()).orElseThrow(
-                () -> new RuntimeException("Cliente con ID " + orderDto.getClientId() + " no encontrado.")
-        );
-
-        Order newOrder = new Order();
-        newOrder.setClient(client);
-        newOrder.setDireccionEnvio(orderDto.getDireccionEnvio());
-
-        newOrder.setAplicaDescuentoDuoc(orderDto.getAplicaDescuentoDuoc());
-        newOrder.setEstado("Pendiente");
-
-        List<OrderDetail> orderDetails = new ArrayList<>();
-        double total = 0.0;
-
-        for (ItemDTO itemDto : orderDto.getItems()) {
-
-            // Se busca el producto, si no existe lanza RuntimeException
-            Product product = productService.findById(itemDto.getProductId()).orElseThrow(
-                    () -> new RuntimeException("Producto con ID " + itemDto.getProductId() + " no encontrado.")
-            );
-
-            double unitPrice = product.getPrecio().doubleValue();
-
-            if (newOrder.getAplicaDescuentoDuoc()) {
-                unitPrice = unitPrice * (1.0 - DUOC_DISCOUNT_RATE);
-            }
-
-            if (product.getStock() < itemDto.getCantidad()) {
-                throw new RuntimeException("Stock insuficiente para el producto: " + product.getName());
-            }
-
-            OrderDetail detail = new OrderDetail();
-            detail.setOrder(newOrder);
-            detail.setProduct(product);
-            detail.setCantidad(itemDto.getCantidad());
-            detail.setPrecioUnitario(unitPrice);
-
-            orderDetails.add(detail);
-
-            total += unitPrice * itemDto.getCantidad();
-
-            product.setStock(product.getStock() - itemDto.getCantidad());
-        }
-
-        newOrder.setTotal(total);
-        newOrder.setItems(orderDetails);
-
-        return orderRepository.save(newOrder);
-    }
-
-    @Override
-    @Transactional
-    public void deleteOrder(Long id) {
-        if (!orderRepository.existsById(id)) {
-            throw new RuntimeException("Orden con ID " + id + " no encontrada para eliminar.");
-        }
-        orderRepository.deleteById(id);
+    public List<Order> findByUser(String username) {
+        return orderRepository.findByUserUsername(username);
     }
 }
